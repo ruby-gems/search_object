@@ -10,8 +10,10 @@ module SearchObject
       attr_reader :page, :per_page
 
       def initialize(options = {})
-        @page     = [options[:page].to_i, 0].max
-        @per_page = self.class.calculate_per_page options[:per_page]
+        # 可能从filters中传入的分页
+        @page = options.dig(:filters, :page) ? options.dig(:filters, :page).to_i : [options[:page].to_i, 0].max
+
+        @per_page = self.class.calculate_per_page(options.dig(:filters, :per_page) ? options.dig(:filters, :per_page).to_i : options[:per_page])
 
         super options
       end
@@ -28,19 +30,19 @@ module SearchObject
 
       module ClassMethods
         def per_page(number)
-          raise InvalidNumberError.new('Per page', number) unless number.positive?
+          raise InvalidNumberError.new("Per page", number) unless number.positive?
 
           config[:per_page] = number
         end
 
         def min_per_page(number)
-          raise InvalidNumberError.new('Min per page', number) unless number.positive?
+          raise InvalidNumberError.new("Min per page", number) unless number.positive?
 
           config[:min_per_page] = number
         end
 
         def max_per_page(number)
-          raise InvalidNumberError.new('Max per page', number) unless number.positive?
+          raise InvalidNumberError.new("Max per page", number) unless number.positive?
 
           config[:max_per_page] = number
         end
