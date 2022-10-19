@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require "pagy"
 require "spec_helper_active_record"
 module SearchObject

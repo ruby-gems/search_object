@@ -9,13 +9,12 @@ module SearchObject
       # Note(rstankov): From Rails 5+ ActionController::Parameters aren't Hash
       #   In a lot of cases `stringify_keys` is used on action params
       hash = hash.to_unsafe_h if hash.respond_to? :to_unsafe_h
-      Hash[(hash || {}).map { |k, v| [k.to_s, v] }]
+      (hash || {}).map { |k, v| [k.to_s, v] }.to_h
     end
 
     def slice_keys(hash, keys)
-      keys.inject({}) do |memo, key|
+      keys.each_with_object({}) do |key, memo|
         memo[key] = hash[key] if hash.key? key
-        memo
       end
     end
 
@@ -25,11 +24,11 @@ module SearchObject
 
     def underscore(text)
       text.to_s
-          .tr('::', '_')
-          .gsub(/([A-Z]+)([A-Z][a-z])/) { "#{Regexp.last_match[1]}_#{Regexp.last_match[2]}" }
-          .gsub(/([a-z\d])([A-Z])/) { "#{Regexp.last_match[1]}_#{Regexp.last_match[2]}" }
-          .tr('-', '_')
-          .downcase
+        .tr("::", "_")
+        .gsub(/([A-Z]+)([A-Z][a-z])/) { "#{Regexp.last_match[1]}_#{Regexp.last_match[2]}" }
+        .gsub(/([a-z\d])([A-Z])/) { "#{Regexp.last_match[1]}_#{Regexp.last_match[2]}" }
+        .tr("-", "_")
+        .downcase
     end
 
     def ensure_included(item, collection)
@@ -48,22 +47,26 @@ module SearchObject
       end
     end
 
-    def normalize_search_handler(handler, name)
+    def normalize_search_handler(handler, name, config)
       case handler
       when Symbol then ->(scope, value) { method(handler).call scope, value }
       when Proc then handler
-      else ->(scope, value) { scope.where name => value unless value.blank? }
+      else
+        if config[:use_like]
+          ->(scope, value) { scope.where("#{name} like ? ", "%#{value}%") unless value.blank? }
+        else
+          ->(scope, value) { scope.where name => value unless value.blank? }
+        end
       end
     end
 
-    def deep_copy(object) # rubocop:disable Metrics/MethodLength
+    def deep_copy(object)
       case object
       when Array
         object.map { |element| deep_copy(element) }
       when Hash
-        object.inject({}) do |result, (key, value)|
+        object.each_with_object({}) do |(key, value), result|
           result[key] = deep_copy(value)
-          result
         end
       when NilClass, FalseClass, TrueClass, Symbol, Method, Numeric
         object

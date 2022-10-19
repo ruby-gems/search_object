@@ -14,7 +14,7 @@ module SearchObject
 
     def initialize(options = {})
       config = self.class.config
-      scope  = options[:scope] || (config[:scope] && instance_eval(&config[:scope]))
+      scope = options[:scope] || (config[:scope] && instance_eval(&config[:scope]))
 
       raise MissingScopeError unless scope
 
@@ -72,7 +72,7 @@ module SearchObject
       attr_reader :config
 
       def inherited(base)
-        base.instance_variable_set '@config', Helper.deep_copy(config)
+        base.instance_variable_set :@config, Helper.deep_copy(config)
       end
 
       def scope(&block)
@@ -80,14 +80,14 @@ module SearchObject
       end
 
       def option(name, options = nil, &block)
-        options = { default: options } unless options.is_a?(Hash)
+        options = {default: options} unless options.is_a?(Hash)
 
-        name    = name.to_s
+        name = name.to_s
         default = options[:default]
         handler = options[:with] || block
 
         config[:defaults][name] = default unless default.nil?
-        config[:options][name]  = Helper.normalize_search_handler(handler, name)
+        config[:options][name] = Helper.normalize_search_handler(handler, name, config)
 
         define_method(name) { @search.param name }
       end
