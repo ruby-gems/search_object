@@ -11,6 +11,7 @@ require 'search_object/plugin/will_paginate'
 require 'search_object/plugin/kaminari'
 require 'search_object/plugin/sorting'
 require 'search_object/plugin/enum'
+require 'search_object/plugin/pagy'
 
 module SearchObject
   def self.module(*plugins)
